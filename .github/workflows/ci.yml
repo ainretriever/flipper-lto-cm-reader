@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install uFBT
+        run: python -m pip install --upgrade ufbt
+
+      - name: Run C parser tests
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -o tests/test_parser tests/test_parser.c lto_cm_parser.c
+          ./tests/test_parser
+
+      - name: Run JavaScript dump-tool tests
+        run: npm test
+
+      - name: Build FAP
+        run: ufbt

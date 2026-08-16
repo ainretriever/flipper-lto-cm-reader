@@ -1,0 +1,32 @@
+# Flipper and uFBT build output
+build/
+dist/
+.fbt/
+.ufbt/
+.sdk_headers/
+*.fap
+*.elf
+*.map
+*.exe
+*.obj
+/tests/test_parser
+
+# Cartridge dumps and generated reports
+*.bin
+*.parsed.json
+*.parsed.md
+!tests/fixtures/*.bin
+
+# Archives, logs, and local tooling
+*.zip
+*.rar
+*.7z
+*.log
+node_modules/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

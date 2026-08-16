@@ -1,0 +1,11 @@
+Flipper Zero LTO CM Reader
+
+This project uses the public Flipper Zero firmware application APIs and is designed
+to run on Flipper Zero hardware. Flipper Zero and the upstream firmware are projects
+of Flipper Devices Inc.
+
+Protocol research was informed by publicly available LTO cartridge-memory work in
+philpem/nfc-ltocm and the Proxmark3 community implementation.
+
+No upstream firmware source tree or third-party reference implementation is included
+in this repository.

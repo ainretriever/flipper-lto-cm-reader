@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+App(
+    appid="lto_cm_probe",
+    name="LTO CM Reader",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="lto_cm_probe_app",
+    fap_version="0.1.0",
+    requires=["gui"],
+    stack_size=2 * 1024,
+    fap_category="NFC",
+)
