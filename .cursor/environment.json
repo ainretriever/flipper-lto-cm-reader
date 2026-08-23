@@ -1,0 +1,4 @@
+{
+  "name": "Flipper LTO CM Reader",
+  "install": "export PATH=\"$HOME/.local/bin:$PATH\" && python3 -m pip install --user --upgrade ufbt && ufbt"
+}
