@@ -64,6 +64,7 @@ static void test_lto5_health(void) {
     CHECK(lto_cm_parse_health(&parser, &info, &health));
     CHECK(strcmp(health.manufacture_date, "2024-01-02") == 0);
     CHECK(health.load_count == 42U);
+    CHECK(!health.uninitialized);
     CHECK(close_to(health.written_tb, 0.002473, 0.000000001));
     CHECK(close_to(health.read_tb, 0.004946, 0.000000001));
     CHECK(close_to(health.fve, 3000.0 / (80.0 * 7800.0), 0.000000001));
@@ -112,7 +113,55 @@ static void test_cleaning_32byte_status(void) {
     free(data);
 }
 
-int main(void) {
+static void test_uninitialized(const char* path) {
+    size_t size = 0;
+    uint8_t* data = load_fixture(path, &size);
+    CHECK(data != NULL);
+    if(!data) return;
+    uint8_t read_map[255];
+    memset(read_map, 1, sizeof(read_map));
+    LtoCmParser parser = {data, size, read_map, size / LTO_CM_BLOCK_SIZE};
+    LtoMediaInfo info = {0};
+    LtoHealth health;
+    CHECK(lto_cm_identify_media(&parser, &info));
+    CHECK(info.generation == 5U);
+    CHECK(lto_cm_has_factory_layout(&parser));
+    CHECK(lto_cm_parse_health(&parser, &info, &health));
+    CHECK(health.uninitialized);
+    CHECK(health.load_count == 0U);
+    CHECK(!health.enhanced_metrics);
+    uint16_t status = 0;
+    CHECK(lto_cm_find_page(&parser, 0x105U, &status));
+    /* Reproduce the targeted health read: bootstrap, directory, status only. */
+    memset(read_map, 0, sizeof(read_map));
+    for(size_t i = 0; i < 4U; i++) read_map[i] = 1;
+    for(size_t i = 8U; i < 16U; i++) read_map[i] = 1;
+    read_map[status / 32U] = 1;
+    read_map[status / 32U + 1U] = 1;
+    CHECK(lto_cm_parse_health(&parser, &info, &health));
+    data[status + 15U] = 1;
+    CHECK(!lto_cm_parse_health(&parser, &info, &health));
+    data[status + 15U] = 0;
+    read_map[status / 32U] = 0;
+    CHECK(!lto_cm_parse_health(&parser, &info, &health));
+    read_map[status / 32U] = 1;
+    read_map[0x140U / 32U] = 0;
+    CHECK(!lto_cm_has_factory_layout(&parser));
+    CHECK(!lto_cm_parse_health(&parser, &info, &health));
+    read_map[0x140U / 32U] = 1;
+    data[0x110] = 0x11;
+    data[0x111] = 0x08;
+    CHECK(!lto_cm_has_factory_layout(&parser));
+    CHECK(!lto_cm_parse_health(&parser, &info, &health));
+    data[0x111] = 0x01;
+    CHECK(!lto_cm_has_factory_layout(&parser));
+    CHECK(!lto_cm_parse_health(&parser, &info, &health));
+    free(data);
+}
+
+int main(int argc, char** argv) {
+    test_uninitialized("tests/fixtures/lto5_uninitialized.bin");
+    if(argc > 1) test_uninitialized(argv[1]);
     test_lto5_health();
     test_cleaning_32byte_status();
     if(failures != 0) {

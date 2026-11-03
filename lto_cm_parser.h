@@ -29,6 +29,7 @@ typedef struct {
     uint32_t midpoint_passes;
     uint8_t max_tape_temp;
     bool enhanced_metrics;
+    bool uninitialized;
     char manufacture_date[11];
 } LtoHealth;
 
@@ -71,3 +72,6 @@ bool lto_cm_parse_health(
     LtoMediaInfo* info,
     LtoHealth* health);
 bool lto_cm_parse_cleaning(const LtoCmParser* parser, LtoCleaning* cleaning);
+
+/* Complete factory directory with no drive-created pages; status is checked separately. */
+bool lto_cm_has_factory_layout(const LtoCmParser* parser);

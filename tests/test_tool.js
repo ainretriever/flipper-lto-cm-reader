@@ -34,6 +34,11 @@ try {
     assert.strictEqual(lto5.derived.lifetime.estimatedBytesWritten, "2473000000");
     assert.strictEqual(lto5.derived.lifetime.estimatedBytesRead, "4946000000");
 
+    const factory = parseFixture("lto5_uninitialized.bin");
+    assert.deepStrictEqual(factory.derived, {uninitialized: true, loadCount: 0, usageAvailable: false});
+    assert.strictEqual(factory.fields.initialisation, null);
+    assert.deepStrictEqual(factory.fields.usageInformation, []);
+
     const cleaning = parseFixture("cleaning_32byte.bin");
     assert.strictEqual(cleaning.cmManufacturerInformation.serialCheckValid, true);
     assert.strictEqual(cleaning.fields.cartridgeManufacturer.format, "Cleaning");

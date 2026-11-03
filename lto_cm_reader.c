@@ -209,6 +209,16 @@ static bool lto_build_payload_plan(LtoApp* app) {
         return lto_add_page_blocks(app, 0x105U, 28U);
     }
 
+    const LtoCmParser parser = {
+        .data = app->cm,
+        .size = app->state.cm_size,
+        .blocks_read = app->blocks_read,
+        .block_count = app->state.cm_block_count,
+    };
+    if(lto_cm_has_factory_layout(&parser)) {
+        return lto_add_page_blocks(app, 0x105U, 64U);
+    }
+
     const size_t usage_length = app->state.generation >= 5U ? 96U : 64U;
     bool success = lto_add_page_blocks(app, 0x105U, 64U) &&
                    lto_add_page_blocks(app, 0x108U, usage_length) &&
@@ -320,6 +330,15 @@ static void lto_draw_health(Canvas* canvas, const LtoState* state) {
         state->generation,
         state->worm ? " WORM" : (state->type_m ? " M8" : ""));
     canvas_draw_str(canvas, 2, 11, line);
+    if(h->uninitialized) {
+        canvas_set_font(canvas, FontSecondary);
+        canvas_draw_str(canvas, 2, 25, "Uninitialized cartridge");
+        snprintf(line, sizeof(line), "Made: %s", h->manufacture_date);
+        canvas_draw_str(canvas, 2, 38, line);
+        canvas_draw_str(canvas, 2, 50, "Loads: 0  Usage: N/A");
+        canvas_draw_str(canvas, 2, 63, "Back: main menu");
+        return;
+    }
     snprintf(line, sizeof(line), "%u/5", state->result_page + 1U);
     canvas_draw_str_aligned(canvas, 126, 11, AlignRight, AlignBottom, line);
     canvas_set_font(canvas, FontSecondary);

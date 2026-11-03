@@ -23,3 +23,11 @@ These fixtures were constructed from scratch for automated tests. They do not co
 - Tape length: `300 m`
 - Used position: `55 m`
 - Estimated remaining cleanings under the application heuristic: `42`
+
+## `lto5_uninitialized.bin`
+
+- Synthetic 8160-byte CM with a factory-style directory modeled on the supplied blank tape layout
+- Uses the synthetic LTO-5 identity and manufacture date from `lto5_health.bin`
+- Application page at `0x1A0`, version-3 status page at `0x5C0`, zero loads
+- No initialisation or usage pages; unused directory slots point to `0x600`
+- Contains no cartridge or drive identifiers copied from physical media

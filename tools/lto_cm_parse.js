@@ -529,6 +529,16 @@ if (parsed.fields.cartridgeManufacturer.cleaning) {
             expired: remaining <= 0,
         },
     };
+} else if (
+    unprotectedTable.descriptors.at(-1)?.version === 0 &&
+    unprotectedTable.descriptors.at(-1)?.pageId === 0xfff &&
+    unprotectedTable.descriptors.every((d) => [0xffc, 0xffe, 0xfff, 0x200, 0x105].includes(d.pageId)) &&
+    unprotectedTable.descriptors.filter((d) => d.pageId === 0x105).length === 1 &&
+    parsed.fields.statusAndTapeAlert?.threadCount === 0 &&
+    parsed.fields.statusAndTapeAlert.pageLength >= 64 &&
+    pages.some((p) => p.pageId === 0x105 && (p.header & 0xfff) === 0x105 && p.startAddress + p.length <= data.length)
+) {
+    parsed.derived = {uninitialized: true, loadCount: 0, usageAvailable: false};
 } else if (usageByRecency.length >= 2) {
     const currentUsage = usageByRecency[0];
     const previousUsage = usageByRecency[1];
@@ -628,7 +638,9 @@ addObjectSection("EOD", parsed.fields.eod);
 addObjectSection("Status and Tape Alert", parsed.fields.statusAndTapeAlert);
 addObjectSection("Cartridge content", parsed.fields.cartridgeContent);
 addObjectSection("Application specific", parsed.fields.applicationSpecific);
-if (parsed.derived.cleaning) {
+if (parsed.derived.uninitialized) {
+    addObjectSection("Uninitialized cartridge", parsed.derived);
+} else if (parsed.derived.cleaning) {
     addObjectSection("Derived cleaning summary", parsed.derived.cleaning);
 } else if (parsed.derived.lifetime) {
     md.push("", "## Derived LTO-5 summary", "");

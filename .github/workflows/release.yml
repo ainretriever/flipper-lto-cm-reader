@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [application.fam]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: app
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+      - name: Test parsers
+        working-directory: app
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -o /tmp/test_parser tests/test_parser.c lto_cm_parser.c
+          /tmp/test_parser
+          npm test
+      - name: Check out Momentum mntm-012
+        uses: actions/checkout@v7
+        with:
+          repository: Next-Flip/Momentum-Firmware
+          ref: d3f89dfe2ef6b01839201598e9be1590cba80322
+          submodules: recursive
+          path: firmware
+      - name: Build FAP for API 87.1
+        run: |
+          mkdir -p firmware/applications_user/lto_cm_probe
+          cp app/application.fam app/lto_cm_reader.c app/lto_cm_parser.c app/lto_cm_parser.h firmware/applications_user/lto_cm_probe/
+          cd firmware
+          FBT_NO_SYNC=1 ./fbt fap_lto_cm_probe
+      - name: Prepare release assets
+        run: |
+          VERSION=$(node -p "require('./app/package.json').version")
+          grep -q "fap_version=\"$VERSION\"" app/application.fam
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          mkdir dist
+          cp firmware/build/f7-firmware-C/.extapps/lto_cm_probe.fap "dist/lto_cm_probe-$VERSION-mntm-012.fap"
+          cd dist
+          sha256sum *.fap > SHA256SUMS
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "v$VERSION" dist/*.fap dist/SHA256SUMS --target "$GITHUB_SHA" --title "v$VERSION" --notes-file app/RELEASE_NOTES.md --latest

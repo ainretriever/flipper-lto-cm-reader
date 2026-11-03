@@ -98,6 +98,28 @@ bool lto_cm_find_page(const LtoCmParser* parser, uint16_t page_id, uint16_t* add
     return false;
 }
 
+bool lto_cm_has_factory_layout(const LtoCmParser* parser) {
+    if(!parser) return false;
+    uint16_t directory;
+    if(!lto_cm_find_page(parser, 0xFFFU, &directory)) return false;
+    bool status_found = false;
+    for(size_t offset = directory;
+        offset + 4U <= parser->size && offset - directory < LTO_DIRECTORY_SCAN_BYTES;
+        offset += 4U) {
+        if(!lto_range_is_read(parser, offset, 4U)) return false;
+        const uint16_t descriptor = lto_be16(&parser->data[offset]);
+        const uint16_t id = descriptor & 0xFFFU;
+        if(descriptor == 0x0FFFU) return status_found;
+        if(id == 0x105U) {
+            if(status_found) return false;
+            status_found = true;
+        } else if(id != 0x200U && id != 0xFFCU && id != 0xFFEU) {
+            return false;
+        }
+    }
+    return false;
+}
+
 static bool lto_set_generation_parameters(LtoMediaInfo* info, uint8_t type_code) {
     switch(type_code) {
     case 0x01U:
@@ -217,6 +239,17 @@ bool lto_cm_parse_health(
     if(!lto_cm_find_page(parser, 0x001U, &manufacturer_address) ||
        !lto_cm_find_page(parser, 0x105U, &status_address)) {
         return false;
+    }
+    if(lto_cm_has_factory_layout(parser)) {
+        if(!lto_cm_validate_page(parser, 0x001U, manufacturer_address, 64U) ||
+           !lto_cm_validate_page(parser, 0x105U, status_address, 64U) ||
+           lto_be32(&parser->data[status_address + 12U]) != 0U) {
+            return false;
+        }
+        memset(health, 0, sizeof(*health));
+        health->uninitialized = true;
+        lto_parse_date(health->manufacture_date, &parser->data[manufacturer_address + 24U]);
+        return true;
     }
     for(size_t i = 0; i < 4; i++) {
         const uint16_t usage_page_id = (uint16_t)(0x108U + i);

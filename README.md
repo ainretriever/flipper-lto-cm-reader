@@ -8,7 +8,8 @@ The application can display selected health information without reading the enti
 
 Hardware-tested:
 
-- LTO-5 rewritable data cartridges
+- LTO-5 rewritable data cartridges, including an uninitialized cartridge
+- Momentum mntm-012 (`d3f89dfe`), API 87.1 (uninitialized-cartridge fix tested on hardware)
 - Universal cleaning cartridges with 32-byte and 64-byte status pages
 - Momentum mntm-003 (`186bc96`), API 62.0
 
@@ -28,6 +29,7 @@ Treat support outside the hardware-tested list as experimental.
 ## Features
 
 - Read-only LTO CM protocol implementation over the Flipper Zero NFC hardware
+- Recognizes uninitialized data cartridges with a complete factory page table and zero load count; displays manufacture date and marks usage as unavailable
 - Partial reads for health information
 - Estimated cumulative written and read data
 - Full-volume-equivalent passes, load count, retries, error counters, pass counters, maximum tape temperature, and manufacture date
@@ -78,7 +80,7 @@ node tools/lto_cm_parse.js cartridge.bin
 
 ## Tests
 
-The repository contains synthetic fixtures for an LTO-5 data cartridge and a universal cleaning cartridge with a 32-byte status page. They contain no data copied from physical media.
+The repository contains synthetic fixtures for an LTO-5 data cartridge , an uninitialized LTO-5 cartridge, and a universal cleaning cartridge with a 32-byte status page. They contain no data copied from physical media.
 
 Run the pure C parser tests with a host C compiler:
 
@@ -93,7 +95,7 @@ Run the offline dump-tool tests with Node.js:
 npm test
 ```
 
-GitHub Actions runs both test suites and an uFBT build for every push and pull request.
+GitHub Actions runs both test suites and an uFBT build for every push and pull request. Version changes in `application.fam` on `main` also build against Momentum mntm-012 and publish a tagged release with the FAP and SHA-256 checksum.
 
 ## Important limitations
 
